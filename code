@@ -1,0 +1,206 @@
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+
+public class ExcelApp extends JFrame {
+    private JTable table;
+    private DefaultTableModel tableModel;
+    private JTextField fieldN, fieldTime, fieldResult;
+    private JButton btnAdd, btnDelete, btnClear;
+
+    public ExcelApp() {
+        initUI();
+        setupListeners();
+    }
+
+    private void initUI() {
+        setTitle("Excel-like CRUD Application");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout(10, 10));
+        getContentPane().setBackground(new Color(240, 248, 255));
+
+        String[] columns = {"Число N", "Время (сек)", "Получившееся число"};
+        tableModel = new DefaultTableModel(columns, 0);
+        table = new JTable(tableModel);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.setRowHeight(25);
+        table.setGridColor(new Color(200, 200, 200));
+
+        JTableHeader header = table.getTableHeader();
+        header.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        header.setBackground(new Color(70, 130, 200));
+        header.setForeground(Color.WHITE);
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Данные"));
+
+        JPanel inputPanel = new JPanel(new GridLayout(3, 2, 10, 10));
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Ввод данных"));
+        inputPanel.setBackground(new Color(240, 248, 255));
+
+        fieldN = new JTextField();
+        fieldTime = new JTextField();
+        fieldResult = new JTextField();
+
+        styleTextField(fieldN);
+        styleTextField(fieldTime);
+        styleTextField(fieldResult);
+
+        inputPanel.add(createLabel("Число N:"));
+        inputPanel.add(fieldN);
+        inputPanel.add(createLabel("Время (сек):"));
+        inputPanel.add(fieldTime);
+        inputPanel.add(createLabel("Получившееся число:"));
+        inputPanel.add(fieldResult);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        buttonPanel.setBackground(new Color(240, 248, 255));
+
+        btnAdd = createButton("Добавить", new Color(46, 204, 113));
+        btnDelete = createButton("Удалить", new Color(231, 76, 60));
+        btnClear = createButton("Очистить", new Color(52, 152, 219));
+
+        buttonPanel.add(btnAdd);
+        buttonPanel.add(btnDelete);
+        buttonPanel.add(btnClear);
+
+        JPanel topPanel = new JPanel(new BorderLayout(10, 10));
+        topPanel.setBackground(new Color(240, 248, 255));
+        topPanel.add(inputPanel, BorderLayout.CENTER);
+        topPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        add(topPanel, BorderLayout.NORTH);
+        add(scrollPane, BorderLayout.CENTER);
+
+        setSize(800, 500);
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    private JLabel createLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        label.setForeground(new Color(44, 62, 80));
+        return label;
+    }
+
+    private void styleTextField(JTextField field) {
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setBackground(Color.WHITE);
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+    }
+
+    private JButton createButton(String text, Color color) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        button.setBackground(color);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+
+    private void setupListeners() {
+
+        btnAdd.addActionListener(e -> addRow());
+        btnDelete.addActionListener(e -> deleteRow());
+        btnClear.addActionListener(e -> clearFields());
+
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventDispatcher(e -> {
+                    if (e.getID() == KeyEvent.KEY_PRESSED) {
+                        if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_N) {
+                            addRow();
+                            return true;
+                        } else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+                            clearFields();
+                            return true;
+                        } else if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+                            deleteRow();
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+
+        fieldTime.addKeyListener(new KeyAdapter() {
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                if (!Character.isDigit(c) && c != '.') {
+                    e.consume();
+                }
+            }
+        });
+    }
+
+    private boolean validateInputs() {
+        String timeStr = fieldTime.getText().trim();
+        if (timeStr.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Поле 'Время' не может быть пустым!",
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        try {
+            double time = Double.parseDouble(timeStr);
+            if (time < 0) {
+                JOptionPane.showMessageDialog(this, "Время не может быть отрицательным!",
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Введите корректное число в поле 'Время'",
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        if (fieldN.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Поле 'Число N' не может быть пустым",
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        return true;
+    }
+
+    private void addRow() {
+        if (!validateInputs()) return;
+
+        String n = fieldN.getText().trim();
+        String time = fieldTime.getText().trim();
+        String result = fieldResult.getText().trim();
+
+        if (result.isEmpty()) result = "0";
+
+        tableModel.addRow(new Object[]{n, time, result});
+        clearFields();
+    }
+
+    private void deleteRow() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow != -1) {
+            tableModel.removeRow(selectedRow);
+        } else {
+            JOptionPane.showMessageDialog(this, "Выберите строку для удаления",
+                    "Удаление", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void clearFields() {
+        fieldN.setText("");
+        fieldTime.setText("");
+        fieldResult.setText("");
+        fieldN.requestFocus();
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new ExcelApp());
+    }
+}
