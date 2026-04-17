@@ -1,1 +1,1 @@
-# kvalik_IntelJIdea
+репозиторий для приложения Java + Swing
